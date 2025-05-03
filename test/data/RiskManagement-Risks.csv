@@ -1,0 +1,4 @@
+ID;title;prio;descr;impact;criticality;mitigation_ID;a_BusinessPartner_BusinessPartner
+17840726-1f58-46d1-80e0-5b3e2bee4937;CFR non-compliance;3;Recent restructuring might violate CFR code 71;10000;105;20466921-7d57-4e76-b14c-e53fd97dcb14;3270
+f4cc3bd7-5589-4cfe-a1db-b0ac48301883;SLA violation with possible termination cause;2;Repeated SAL violation on service delivery for two successive quarters;90000;8014;20466921-7d57-4e76-b14c-e53fd97dcb12;2803
+e8de0808-474f-4c23-89d9-174f8bb05683;Shipment violating export control;1;Violation of export and trade control with unauthorized downloads;200000;457;20466921-7d57-4e76-b14c-e53fd97dcb11;3510
