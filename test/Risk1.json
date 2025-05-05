@@ -1,0 +1,18 @@
+{
+    "@odata.context": "$metadata#Risks",
+    "value": [
+        {
+            "ID": "f385e8b1-94a8-41a4-96df-d8f03c8179c7",
+            "a_BusinessPartner_BusinessPartner": null,
+            "criticality": 3,
+            "descr": "first test deployed",
+            "impact": 3,
+            "mitigation_ID": null,
+            "prio": "1",
+            "title": "Risk01",
+            "HasActiveEntity": false,
+            "HasDraftEntity": false,
+            "IsActiveEntity": true
+        }
+    ]
+}
