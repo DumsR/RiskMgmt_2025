@@ -12,6 +12,7 @@ build-parameters:
       commands:
         - rm -rf build/dist
         - mkdir -p build/dist
+        - bash -c "cd mtx/sidecar && npm install && cd ../.."
         - rm -rf build/ui-deployer
         - mkdir -p build/ui-deployer
     - builder: custom
@@ -27,6 +28,22 @@ build-parameters:
       commands:
         - npm install
 modules:
+  - name: RiskManagement-RisksMobile
+    type: html5
+    path: app/RiskManagement.RisksMobile
+    build-parameters:
+      builder: custom
+      commands:
+        - npx mdk build --target module --ui5 --forceUpdate
+        - bash -c "cd Web/MDKModule && rm -rf .npmrc && npm install"
+        - bash -c "cd Web/MDKModule && npm run build"
+        - >-
+          bash -c "mv Web/MDKModule/MDKModule-content.zip
+          ../../build/dist/RisksMobile.zip"
+        - rm -rf Web/MDKModule/dist
+      _artifactName: RisksMobile.zip
+      supported-platforms: []
+      build-result: ../../build/dist
   - name: RiskManagement-riskmanagement.risks
     type: html5
     path: app/riskmanagement.risks
@@ -43,19 +60,6 @@ modules:
       _artifactName: riskmanagementrisks.zip
       supported-platforms: []
       build-result: dist-zip
-  - name: RiskManagement-db-deployer
-    type: hdb
-    path: gen/db
-    parameters:
-      buildpack: nodejs_buildpack
-    build-parameters:
-      builder: npm
-      ignore:
-        - node_modules
-        - package-lock.json
-    requires:
-      - name: RiskManagement-service-uaa
-      - name: RiskManagement-service-db
   - name: RiskManagement-srv
     type: nodejs
     path: gen/srv
@@ -72,61 +76,10 @@ modules:
         - package-lock.json
     requires:
       - name: RiskManagement-service-uaa
-      - name: RiskManagement-service-db
       - name: RiskManagement-service-destination
       - name: RiskManagement-service-metadata
-      - name: RiskManagement-service-connectivity
       - name: RiskManagement-service-logs
-  - name: RiskManagement-aux-destinations
-    type: com.sap.application.content
-    parameters:
-      content:
-        subaccount:
-          existing_destinations_policy: update
-          destinations:
-            - Authentication: OAuth2UserTokenExchange
-              Name: RiskManagement-service-uaa
-              ServiceInstanceName: RiskManagement-uaa
-              ServiceKeyName: RiskManagement-uaa-key
-              sap.cloud.service: lcap.RiskManagement
-            - Authentication: OAuth2UserTokenExchange
-              Name: RiskManagement-app-srv
-              TokenServiceInstanceName: RiskManagement-uaa
-              TokenServiceKeyName: RiskManagement-uaa-key
-              URL: ~{srv-api/srv-url}
-              sap.cloud.service: lcap.RiskManagement
-            - Name: RiskManagement-service-html5-apps-repo-host
-              ServiceInstanceName: RiskManagement-html5-apps-repo-host
-              ServiceKeyName: RiskManagement-html5-apps-repo-host-key
-              sap.cloud.service: lcap.RiskManagement
-            - Authentication: OAuth2UserTokenExchange
-              Name: RiskManagement-RiskManagementService
-              TokenServiceInstanceName: RiskManagement-uaa
-              TokenServiceKeyName: RiskManagement-uaa-key
-              URL: ~{srv-api/srv-url}/service/RiskManagementService
-              sap.cloud.service: lcap.RiskManagement
-              sap.applicationdevelopment.actions.enabled: false
-              sap.build.usage: CAP
-              sap.processautomation.enabled: false
-              HTML5.DynamicDestination: false
-              WebIDEEnabled: false
-              MobileEnabled: false
-              AppgyverEnabled: false
-    build-parameters:
-      no-source: true
-    requires:
-      - name: RiskManagement-service-uaa
-        parameters:
-          service-key:
-            name: RiskManagement-uaa-key
-      - name: srv-api
-      - name: RiskManagement-service-html5-apps-repo-host
-        parameters:
-          service-key:
-            name: RiskManagement-html5-apps-repo-host-key
-      - name: RiskManagement-service-destination
-        parameters:
-          content-target: true
+      - name: RiskManagement-db
   - name: RiskManagement-launchpad
     type: html5
     path: build/launchpad
@@ -148,6 +101,10 @@ modules:
     build-parameters:
       build-result: resources
       requires:
+        - name: RiskManagement-RisksMobile
+          artifacts:
+            - RisksMobile.zip
+          target-path: resources
         - name: RiskManagement-riskmanagement.risks
           artifacts:
             - riskmanagementrisks.zip
@@ -160,6 +117,60 @@ modules:
       - name: RiskManagement-service-html5-apps-repo-host
         parameters:
           content-target: true
+  - name: RiskManagement
+    type: approuter.nodejs
+    path: app/router
+    parameters:
+      keep-existing-routes: true
+      disk-quota: 256M
+      memory: 256M
+    properties:
+      TENANT_HOST_PATTERN: ^(.*)-${default-uri}
+    requires:
+      - name: srv-api
+        group: destinations
+        properties:
+          name: srv-api
+          url: ~{srv-url}
+          forwardAuthToken: true
+      - name: mtx-api
+        group: destinations
+        properties:
+          name: mtx-api
+          url: ~{mtx-url}
+      - name: RiskManagement-service-uaa
+      - name: RiskManagement-service-destination
+      - name: RiskManagement-service-html5-apps-repo-runtime
+    provides:
+      - name: app-api
+        properties:
+          app-protocol: ${protocol}
+          app-uri: ${default-uri}
+  - name: RiskManagement-mtx
+    type: nodejs
+    path: gen/mtx/sidecar
+    requires:
+      - name: app-api
+        properties:
+          SUBSCRIPTION_URL: ~{app-protocol}://\${tenant_subdomain}-~{app-uri}
+          APP_PROTOCOL: ~{app-protocol}
+          APP_URI: ~{app-uri}
+          CF_API_DEST: ppsaasroute-cfapi
+      - name: RiskManagement-service-destination
+      - name: RiskManagement-db
+      - name: RiskManagement-registry
+      - name: RiskManagement-service-uaa
+      - name: RiskManagement-service-html5-apps-repo-host
+    build-parameters:
+      builder: npm-ci
+    parameters:
+      instances: 1
+      memory: 256M
+      disk-quota: 512M
+    provides:
+      - name: mtx-api
+        properties:
+          mtx-url: ${default-url}
 resources:
   - type: org.cloudfoundry.managed-service
     name: RiskManagement-service-uaa
@@ -171,12 +182,11 @@ resources:
       config:
         oauth2-configuration:
           redirect-uris:
-            - https://${subdomain}.launchpad.${default-domain}/login/*
-            - https://${subdomain}.${default-domain}/login/*
+            - https://*.${default-domain}/login/*
           credential-types:
             - binding-secret
             - x509
-        xsappname: RiskManagement-${space}
+        xsappname: RiskManagement-${org}-${space}
         role-collections:
           - description: RiskViewer
             name: RiskManagement-RiskViewer-${space}
@@ -186,14 +196,11 @@ resources:
             name: RiskManagement-RiskManager-${space}
             role-template-references:
               - $XSAPPNAME.RiskManager
-  - type: org.cloudfoundry.managed-service
-    name: RiskManagement-service-db
-    parameters:
-      service: hana
-      service-plan: hdi-shared
-      service-name: RiskManagement-db
+        tenant-mode: shared
   - type: org.cloudfoundry.managed-service
     name: RiskManagement-service-destination
+    requires:
+      - name: srv-api
     parameters:
       service: destination
       service-plan: lite
@@ -201,6 +208,35 @@ resources:
       config:
         HTML5Runtime_enabled: true
         version: 1.0.0
+        init_data:
+          subaccount:
+            destinations:
+              - Name: RiskManagement-html5-content-rt
+                Authentication: NoAuthentication
+                ProxyType: Internet
+                Type: HTTP
+                URL: https://${subdomain}.launchpad.${default-domain}
+                CEP.HTML5contentprovider: true
+            existing_destinations_policy: update
+          instance:
+            existing_destinations_policy: ignore
+            destinations:
+              - Name: ppsaasroute-cfapi
+                Description: CF Cloud Controller API
+                URL: ${controller-url}
+                Type: HTTP
+                ProxyType: Internet
+                Authentication: OAuth2Password
+                tokenServiceURL: ${authorization-url}/oauth/token
+                clientId: cf
+              - Name: RiskManagement-app-srv
+                Description: SusaaS Service API
+                URL: ~{srv-api/srv-url}
+                Type: HTTP
+                ProxyType: Internet
+                Authentication: NoAuthentication
+                HTML5.DynamicDestination: true
+                forwardAuthToken: true
   - type: org.cloudfoundry.user-provided-service
     name: RiskManagement-service-metadata
     parameters:
@@ -209,12 +245,6 @@ resources:
       service-name: RiskManagement-metadata
       config:
         default-domain: ${default-domain}
-  - type: org.cloudfoundry.managed-service
-    name: RiskManagement-service-connectivity
-    parameters:
-      service: connectivity
-      service-plan: lite
-      service-name: RiskManagement-connectivity
   - type: org.cloudfoundry.managed-service
     name: RiskManagement-service-logs
     parameters:
@@ -227,3 +257,34 @@ resources:
       service: html5-apps-repo
       service-plan: app-host
       service-name: RiskManagement-html5-apps-repo-host
+  - name: RiskManagement-db
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: service-manager
+      service-plan: container
+  - name: RiskManagement-registry
+    type: org.cloudfoundry.managed-service
+    requires:
+      - name: mtx-api
+    parameters:
+      service: saas-registry
+      service-plan: application
+      config:
+        xsappname: RiskManagement-${org}-${space}
+        appName: RiskManagement-${org}-${space}
+        displayName: RiskManagement
+        description: A simple CAP project.
+        category: Category
+        appUrls:
+          getDependencies: ~{mtx-api/mtx-url}/-/cds/saas-provisioning/dependencies
+          onSubscription: ~{mtx-api/mtx-url}/-/cds/saas-provisioning/tenant/{tenantId}
+          onSubscriptionAsync: true
+          onUnSubscriptionAsync: true
+          onUpdateDependenciesAsync: true
+          callbackTimeoutMillis: 300000
+  - name: RiskManagement-service-html5-apps-repo-runtime
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-name: RiskManagement-html5-apps-repo-runtime
+      service-plan: app-runtime
