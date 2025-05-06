@@ -1,0 +1,92 @@
+{
+	"DesignTimeTarget": {
+		"Service": "/RisksMobile/Services/RiskManagementService.service",
+		"EntitySet": "Risks",
+		"QueryOptions": ""
+	},
+	"ActionBar": {
+		"Items": [
+			{
+				"OnPress": "/RisksMobile/Rules/RiskManagementService/Risks/NavToRisks_Edit.js",
+				"Position": "Right",
+				"SystemItem": "Edit",
+				"_Type": "Control.Type.ActionBarItem"
+			},
+			{
+				"OnPress": "/RisksMobile/Rules/RiskManagementService/Risks/Risks_DeleteConfirmation.js",
+				"Position": "Right",
+				"SystemItem": "Trash",
+				"_Type": "Control.Type.ActionBarItem"
+			}
+		],
+		"Caption": "$(L,Risks_Detail)",
+		"_Type": "Control.Type.ActionBar"
+	},
+	"Controls": [
+		{
+			"Sections": [
+				{
+					"ObjectHeader": {
+						"Tags": [],
+						"DetailImage": "",
+						"HeadlineText": "{title}",
+						"Subhead": "{prio}",
+						"BodyText": "",
+						"Footnote": "{impact}",
+						"Description": "{descr}",
+						"StatusText": "{criticality}",
+						"StatusImage": "",
+						"SubstatusImage": "",
+						"SubstatusText": "{a_BusinessPartner_BusinessPartner}"
+					},
+					"_Type": "Section.Type.ObjectHeader"
+				},
+				{
+					"KeyAndValues": [
+						{
+							"KeyName": "title",
+							"Value": "{title}",
+							"_Type": "KeyValue.Type.Item"
+						},
+						{
+							"KeyName": "prio",
+							"Value": "{prio}",
+							"_Type": "KeyValue.Type.Item"
+						},
+						{
+							"KeyName": "descr",
+							"Value": "{descr}",
+							"_Type": "KeyValue.Type.Item"
+						},
+						{
+							"KeyName": "impact",
+							"Value": "{impact}",
+							"_Type": "KeyValue.Type.Item"
+						},
+						{
+							"KeyName": "criticality",
+							"Value": "{criticality}",
+							"_Type": "KeyValue.Type.Item"
+						},
+						{
+							"KeyName": "a_BusinessPartner_BusinessPartner",
+							"Value": "{a_BusinessPartner_BusinessPartner}",
+							"_Type": "KeyValue.Type.Item"
+						}
+					],
+					"Layout": {
+						"NumberOfColumns": 2
+					},
+					"MaxItemCount": 1,
+					"_Name": "SectionKeyValue0",
+					"_Type": "Section.Type.KeyValue"
+				}
+			],
+			"DataSubscriptions": [],
+			"_Type": "Control.Type.SectionedTable",
+			"_Name": "SectionedTable"
+		}
+	],
+	"_Type": "Page",
+	"_Name": "Risks_Detail"
+}

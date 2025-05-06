@@ -1,0 +1,17 @@
+{
+  "routes": [
+    {
+      "source": "^/service/RiskManagementService/(.*)$",
+      "target": "/service/RiskManagementService/$1",
+      "destination": "RiskManagement-app-srv",
+      "authenticationType": "xsuaa"
+    },
+    {
+      "source": "^(/.*)$",
+      "target": "$1",
+      "service": "html5-apps-repo-rt",
+      "authenticationType": "xsuaa"
+    }
+  ],
+  "welcomeFile": "/RiskManagementLaunchpad/"
+}
